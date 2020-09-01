@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        #map {
+            width: 700px;
+            /* 清除cell间距 */
+            font-size: 0;
+        }
+
+        .cell {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            background-color: gray;
+            border-right: 1px solid white;
+            border-bottom: 1px solid white;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+    <button onclick="clickAction()">保存</button>
+    <button onclick="clearAction()">清除</button>
+    <button onclick="searchAction()">广度优先搜索</button>
+    <script>
+        class BinaryHeap {
+            constructor(data, compare) {
+                this.data = data.slice();
+                this.compare = compare || ((a, b) => a - b);
+                this.heap = [];
+                this.createHeap(this.data);
+            }
+            createHeap(arr) {
+                for (let i = 0, len = arr.length; i < len; i++) {
+                    this.insert(arr[i]);
+                }
+                console.log(this.heap);
+            }
+            adjust(index) {
+                if (index === 0) {
+                    return;
+                }
+                let currentVal = this.heap[index];
+                let pIndex = Math.floor((index - 1) / 2);
+                let pValue = this.heap[pIndex];
+                if (this.compare(currentVal, pValue) < 0) {
+                    this.heap[pIndex] = currentVal;
+                    this.heap[index] = pValue;
+                    this.adjust(pIndex);
+                }
+            }
+            insert(val) {
+                let len = this.heap.push(val);
+                this.adjust(len - 1);
+            }
+
+            adjustParentToChild(index) {
+                let leftIndex = 2 * index + 1;
+                let rightIndex = 2 * index + 2;
+                if (leftIndex >= this.heap.length || rightIndex >= this.heap.length) {
+                    return;
+                }
+
+                if (this.compare(this.heap[index], this.heap[leftIndex]) > 0) {
+                    let tmp = this.heap[index];
+                    this.heap[index] = this.heap[leftIndex];
+                    this.heap[leftIndex] = tmp;
+                }
+                if (this.compare(this.heap[index], this.heap[rightIndex]) > 0) {
+                    let tmp = this.heap[index];
+                    this.heap[index] = this.heap[rightIndex];
+                    this.heap[rightIndex] = tmp;
+                }
+                this.adjustParentToChild(leftIndex);
+                this.adjustParentToChild(rightIndex);
+            }
+
+            take() {
+                if (this.heap.length <= 0) {
+                    return
+                }
+                let first = this.heap[0];
+                this.heap[0] = this.heap[this.heap.length - 1];
+                this.heap.pop();
+                // 只剩下一个元素时不再需要调整堆
+                if (this.heap.length > 1) {
+                    this.adjustParentToChild(0);
+                }
+                return first;
+            }
+            give(val) {
+                this.insert(val);
+            }
+            get length() {
+                return this.heap.length;
+            }
+        }
+
+        // function testCCC(){
+        //     let bh = new BinaryHeap([5,3,4,2,1]);
+        //     console.log(bh.take());
+        //     console.log(bh.take());
+        //     console.log(bh.take());
+        //     console.log(bh.take());
+        //     console.log(bh.take());
+        // }
+        // testCCC();
+
+        class Sorted {
+            constructor(data, compare) {
+                // 浅拷贝
+                this.data = data.slice();
+                this.compare = compare || ((a, b) => a - b);
+            }
+            take() {
+                if (!this.data.length) {
+                    return
+                }
+                let min = this.data[0];
+                let minIndex = 0;
+                for (let i = 1, len = this.data.length; i < len; i++) {
+                    if (this.compare(this.data[i], min) < 0) {
+                        min = this.data[i];
+                        minIndex = i;
+                    }
+                }
+                // 删除最小元素，为了减少数组的移动，从数组最后一位删
+                this.data[minIndex] = this.data[this.data.length - 1];
+                this.data.pop();
+                return min;
+            }
+            give(v) {
+                this.data.push(v);
+            }
+            get length() {
+                return this.data.length;
+            }
+        }
+
+        function testSorted() {
+            let s = new Sorted([2, 3, 6, 1, 4, 9, 5, 8, 7]);
+            console.log(s.take());
+            console.log(s.take());
+            console.log(s.take());
+            console.log(s.take());
+        }
+
+        let map = document.getElementById("map");
+        let mapArr = localStorage["map"] ? JSON.parse(localStorage["map"]) : Array(10000).fill(0);
+        let searchPath = Object.create(mapArr);
+        let mouseDown = false;
+        let clear = false;
+        document.addEventListener("mousedown", (e) => {
+            mouseDown = true;
+            clear = e.which === 3;
+        });
+        document.addEventListener("mouseup", () => mouseDown = false);
+        // 清除默认右击弹出菜单栏事件
+        document.addEventListener("contextmenu", (e) => e.preventDefault());
+
+        function clickAction() {
+            localStorage["map"] = JSON.stringify(mapArr);
+        }
+        function clearAction() {
+            console.log("clearAction");
+            mapArr = Array(10000).fill(0);
+            localStorage["map"] = JSON.stringify(mapArr);
+            map.innerHTML = "";
+            createMap();
+        }
+        function createMap() {
+            for (let x = 0; x < 100; x++) {
+                for (let y = 0; y < 100; y++) {
+                    let cellValue = mapArr[x * 100 + y];
+                    let cell = document.createElement("div");
+                    cell.classList.add("cell");
+                    cell.style.backgroundColor = cellValue ? "black" : "";
+                    cell.addEventListener("mousemove", () => {
+                        if (mouseDown) {
+                            if (clear) {
+                                cell.style.backgroundColor = "";
+                                mapArr[x * 100 + y] = 0;
+                            } else {
+                                cell.style.backgroundColor = "black";
+                                mapArr[x * 100 + y] = 1;
+                            }
+                        }
+                    })
+                    map.appendChild(cell);
+                }
+            }
+        }
+
+        function sleep(ms) {
+            return new Promise((resolve) => {
+                setTimeout(resolve, ms);
+            });
+        }
+        async function findPath(mapArr, start, end) {
+            function distance(point) {
+                return (point[0] - end[0]) ** 2 + (point[1] - end[1]) ** 2;
+            }
+            // let queue = new Sorted([start], (a, b) => distance(a) - distance(b));
+            let queue = new BinaryHeap([start], (a, b) => distance(a) - distance(b));
+            async function insert(x, y, pre) {
+                if (x < 0 || x >= 100 || y < 0 || y >= 100) {
+                    return
+                }
+                if (searchPath[x * 100 + y]) {
+                    return
+                }
+                await sleep(10);
+                map.children[x * 100 + y].style.backgroundColor = "lightgreen";
+
+                searchPath[x * 100 + y] = pre;
+                queue.give([x, y]);
+            }
+
+            while (queue.length) {
+                let [x, y] = queue.take();
+                if (x === end[0] && y === end[1]) {
+                    let okPath = [];
+                    console.log(x, y, 'true');
+                    map.children[x * 100 + y].style.backgroundColor = "red";
+                    while (x !== start[0] || y !== start[1]) {
+                        okPath.push([x, y]);
+                        [x, y] = searchPath[x * 100 + y];
+                        await sleep(10);
+                        map.children[x * 100 + y].style.backgroundColor = "purple";
+                    }
+                    return okPath;
+                }
+                await insert(x - 1, y, [x, y]);
+                await insert(x + 1, y, [x, y]);
+                await insert(x, y - 1, [x, y]);
+                await insert(x, y + 1, [x, y]);
+
+                // 斜向紧挨坐标
+                await insert(x - 1, y - 1, [x, y]);
+                await insert(x - 1, y + 1, [x, y]);
+                await insert(x + 1, y - 1, [x, y]);
+                await insert(x + 1, y + 1, [x, y]);
+            }
+            return null;
+        }
+        function searchAction() {
+            findPath(mapArr, [0, 0], [50, 50]);
+        }
+        createMap();
+    </script>
+</body>
+
+</html>
