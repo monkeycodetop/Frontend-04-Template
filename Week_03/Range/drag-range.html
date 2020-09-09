@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        #dragable {
+            display: inline-block;
+            width: 100px;
+            height: 100px;
+            background-color: orange;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="box">文字 文字 文字 文字 文字 文字 文字 文字
+        文字 文字 文字 文字 文字 文字 文字 文字
+        文字 文字 文字 文字 文字 文字 文字 文字
+        文字 文字 文字 文字 文字 文字 文字 文字
+        文字 文字 文字 文字 文字 文字 文字 文字
+        文字 文字 文字 文字 文字 文字 文字 文字
+        文字 文字 文字 文字 文字 文字 文字 文字
+        文字 文字 文字 文字 文字 文字 文字 文字
+        文字 文字 文字 文字 文字 文字 文字 文字
+        文字 文字 文字 文字 文字 文字 文字 文字
+        文字 文字 文字 文字 文字 文字 文字 文字
+        文字 文字 文字 文字 文字 文字 文字 文字
+        文字 文字 文字 文字 文字 文字 文字 文字
+        文字 文字 文字 文字 文字 文字 文字 文字
+        文字 文字 文字 文字 文字 文字 文字 文字
+        文字 文字 文字 文字 文字 文字 文字 文字
+        文字 文字 文字 文字 文字 文字 文字 文字
+        文字 文字 文字 文字 文字 文字 文字 文字
+        文字 文字 文字 文字 文字 文字 文字 文字
+        文字 文字 文字 文字 文字 文字 文字 文字
+        文字 文字 文字 文字 文字 文字 文字 文字
+        文字 文字 文字 文字 文字 文字 文字 文字
+        文字 文字 文字 文字 文字 文字 文字 文字
+        文字 文字 文字 文字 文字 文字 文字 文字
+        文字 文字 文字 文字 文字 文字 文字 文字
+        文字 文字 文字 文字 文字 文字 文字 文字
+        文字 文字 文字 文字 文字 文字 文字 文字
+        文字 文字 文字 文字 文字 文字 文字 文字
+        文字 文字 文字 文字 文字 文字 文字 文字
+        文字 文字 文字 文字 文字 文字 文字 文字
+    </div>
+    <div id="dragable"></div>
+
+    <script>
+        let dragDiv = document.getElementById("dragable");
+        let startX = 0, startY = 0;
+        let pX = 0,pY = 0;
+        dragDiv.addEventListener("mousedown", function (e) {
+            startX = e.clientX;
+            startY = e.clientY;
+            let up = (e) => {
+                pX +=  e.clientX - startX;
+                pY +=  e.clientY - startY;
+                document.removeEventListener("mousemove", move);
+                document.removeEventListener("mouseup", up); 
+            }
+
+            let move = (e) => {
+                // let distanceX = e.clientX - startX;
+                // let distanceY = e.clientY - startY;
+                // dragDiv.style.transform = `translate(${pX + distanceX}px,${pY + distanceY}px)`;
+                let range = getNearest(e.clientX,e.clientY);
+                range.insertNode(dragDiv);
+            }
+            document.addEventListener("mousemove", move);
+            document.addEventListener("mouseup", up);
+        });
+
+        let box = document.getElementById("box");
+        let ranges = [];
+        console.dir(box.childNodes[0]);
+        for(let i = 0;i < box.childNodes[0].textContent.length; i++) {
+            let range = document.createRange();
+            range.setStart(box.childNodes[0],i);
+            range.setEnd(box.childNodes[0],i);
+
+            // CSSOM API
+            console.log(range.getBoundingClientRect());
+            ranges.push(range);
+        }
+
+        function getNearest(x,y) {
+            let min = Infinity;
+            let nearest = null;
+            for(let range of ranges){
+                let rect = range.getBoundingClientRect();
+                let distance = (rect.x - x) ** 2 + (rect.y - y) ** 2;
+                if(distance < min) {
+                    nearest = range;
+                    min = distance;
+                }
+            }
+            return nearest;
+        }
+
+        document.addEventListener("selectstart",e=>e.preventDefault());
+    </script>
+</body>
+
+</html>
