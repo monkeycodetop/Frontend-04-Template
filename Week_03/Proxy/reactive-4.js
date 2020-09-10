@@ -8,6 +8,7 @@ let reactivities= new Map();
 let usedReactives = [];
 function effect(callback){
     usedReactives = [];
+    // callback中如果有proxy的属性，就会触发get，在get中收集哪些属性需要被监听
     callback();
     for(let reactivity of usedReactives) {
         if(!callbacks.has(reactivity[0])) {

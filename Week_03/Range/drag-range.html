@@ -6,6 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
         #dragable {
             display: inline-block;
             width: 100px;
@@ -101,7 +105,7 @@
             return nearest;
         }
 
-        document.addEventListener("selectstart",e=>e.preventDefault());
+        // document.addEventListener("selectstart",e=>e.preventDefault());
     </script>
 </body>
 
